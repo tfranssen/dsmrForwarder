@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  python-app:
+    build: .
+    container_name: python-script-runner
+    restart: always
+    volumes:
+      - ./main.py:/app/main.py  # Optional: bind-mount the script for easy updates
