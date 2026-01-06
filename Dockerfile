@@ -1,6 +1,9 @@
 # Use an official Python base image
 FROM python:3.9-slim
 
+# Disable Python output buffering for real-time logs
+ENV PYTHONUNBUFFERED=1
+
 # Copy the script into the container
 COPY main.py /app/main.py
 COPY start.sh /app/start.sh

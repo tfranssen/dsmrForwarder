@@ -58,16 +58,19 @@ def get_envoy_production():
         return None
 
 
+print(f"Connecting to MQTT broker at {broker_address}:{port}...")
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 client.connect(broker_address, port)
 client.loop_start()
+print("MQTT connected!")
 
-
+print(f"Opening serial port /dev/ttyUSB0...")
 serial_reader = SerialReader(
     device='/dev/ttyUSB0',
     serial_settings=SERIAL_SETTINGS_V5,
     telegram_specification=telegram_specifications.V5
 )
+print("Waiting for DSMR telegrams...")
 
 for telegram in serial_reader.read():
     # Get PV production from Envoy
