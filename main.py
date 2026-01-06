@@ -9,7 +9,7 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # MQTT broker details
-broker_address = "192.168.2.40"  # Replace with your MQTT broker's address
+broker_address = "192.168.2.10"  # Replace with your MQTT broker's address
 port = 1883  # Default MQTT port
 # Separate topics for easier debugging
 grid_topic = "dsmr/grid"  # For dbus-mqtt-grid
