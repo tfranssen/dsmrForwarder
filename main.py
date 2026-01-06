@@ -11,8 +11,9 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # MQTT broker details
 broker_address = "192.168.2.40"  # Replace with your MQTT broker's address
 port = 1883  # Default MQTT port
-grid_topic = "enphase/envoy-s/meters"  # MQTT topic for grid data
-pv_topic = "pv/SENSOR"  # MQTT topic for PV data (dbus-mqtt-pv compatible)
+# Separate topics for easier debugging
+grid_topic = "dsmr/grid"  # For dbus-mqtt-grid
+pv_topic = "enphase/pv"   # For dbus-mqtt-pv
 
 # Envoy/IQ Gateway API configuration
 envoy_host = "192.168.2.9"  # Replace with your IQ Gateway IP address
@@ -69,7 +70,14 @@ serial_reader = SerialReader(
 )
 
 for telegram in serial_reader.read():
-    # Get grid data from smart meter
+    # Get PV production from Envoy
+    pv_data = get_envoy_production()
+    
+    if not client.is_connected():
+        print("Connection lost. Reconnecting...")
+        client.reconnect()
+    
+    # Publish grid data
     grid_message = {
         "grid": {
             "power": round(float(telegram.CURRENT_ELECTRICITY_USAGE.value)*1000 - float(telegram.CURRENT_ELECTRICITY_DELIVERY.value)*1000),
@@ -83,28 +91,18 @@ for telegram in serial_reader.read():
             "energy_reverse": round(telegram.ELECTRICITY_DELIVERED_TARIFF_1.value + telegram.ELECTRICITY_DELIVERED_TARIFF_2.value, 2)
         }
     }
-    
-    # Get PV production from Envoy
-    pv_data = get_envoy_production()
-    
-    if not client.is_connected():
-        print("Connection lost. Reconnecting...")
-        client.reconnect()
-    
-    # Publish grid data
     grid_json = json.dumps(grid_message, use_decimal=True)
-    print(f"Grid: {grid_json}")
+    print(f"[{grid_topic}] {grid_json}")
     client.publish(grid_topic, grid_json)
     
-    # Publish PV data in dbus-mqtt-pv compatible format
-    if pv_data:
-        pv_message = {
-            "pv": {
-                "power": pv_data["power"],
-                "energy_forward": pv_data["energy_forward"]
-            }
+    # Publish PV data
+    pv_message = {
+        "pv": {
+            "power": pv_data["power"] if pv_data else 0,
+            "energy_forward": pv_data["energy_forward"] if pv_data else 0
         }
-        pv_json = json.dumps(pv_message, use_decimal=True)
-        print(f"PV: {pv_json}")
-        client.publish(pv_topic, pv_json)
+    }
+    pv_json = json.dumps(pv_message, use_decimal=True)
+    print(f"[{pv_topic}] {pv_json}")
+    client.publish(pv_topic, pv_json)
     
